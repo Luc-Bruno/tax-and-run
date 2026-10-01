@@ -19,7 +19,7 @@ Revisão em 01/10/2026, baseada na especificação fornecida e nos ajustes poste
 | Interface funcional e pixel art | Mapa, banco, loja, três casas, HUD, estados, botão, animações e feedback; `UiTest` e janela real |
 | Documentação e repositório | README, AGENTS, especificação atualizada e `.gitignore` para bytecode, logs e imagens de teste |
 
-O PDF e os diagramas não são obrigatórios nesta versão, conforme a exceção registrada na seção 1.2 da especificação. Áudio e arquivos de arte externos também não são requisitos pendentes. Por decisão do usuário em 01/10/2026, JavaFX foi descartado: o projeto permanecerá em Java padrão, Swing, AWT e Java2D, sem bibliotecas externas.
+O PDF e os diagramas não são obrigatórios nesta versão, conforme a exceção registrada na seção 1.2 da especificação. Áudio e arquivos de arte externos também não são requisitos pendentes. O projeto utiliza exclusivamente Java padrão, Swing, AWT e Java2D, sem bibliotecas externas.
 
 ## Verificação executada
 

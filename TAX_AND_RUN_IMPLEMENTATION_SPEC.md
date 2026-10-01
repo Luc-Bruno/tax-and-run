@@ -108,7 +108,6 @@ Utilizar:
 
 Não utilizar no projeto:
 
-- JavaFX;
 - LibGDX;
 - Processing;
 - LWJGL;
@@ -118,7 +117,7 @@ Não utilizar no projeto:
 
 ## 3.1 Decisão definitiva sobre a interface
 
-Por decisão do usuário em 01/10/2026, a migração para JavaFX foi descartada. O projeto permanecerá em Java padrão, Swing, AWT e Java2D, sem bibliotecas externas.
+O projeto utiliza exclusivamente Java padrão, Swing, AWT e Java2D, sem bibliotecas externas.
 
 A separação MVC continua obrigatória para organizar domínio, controle e apresentação, independentemente dessa decisão de tecnologia.
 
@@ -2054,7 +2053,7 @@ Ele deve registrar de forma objetiva:
 - HUD com estados;
 - logs;
 - proibição de remover as FSMs;
-- decisão de manter Swing, AWT e Java2D, sem migração para JavaFX;
+- uso exclusivo de Java padrão, Swing, AWT e Java2D;
 - obrigação de atualizar `README.md` e `AGENTS.md` se alguma regra for alterada.
 
 ## 31.1 Texto conceitual que deve constar no AGENTS.md

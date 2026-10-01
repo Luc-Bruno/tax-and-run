@@ -42,7 +42,7 @@ Cada agente tem sua própria máquina de estados, implementada com o padrão **S
 
 ## Tecnologia
 
-**Java 17 ou superior**, usando somente Java padrão, Swing, AWT e Java2D. Essa é a tecnologia definida para o projeto, sem bibliotecas externas. A migração para JavaFX foi descartada.
+**Java 17 ou superior**, usando somente Java padrão, Swing, AWT e Java2D, sem bibliotecas externas.
 
 A interface mostra os estados atuais dos agentes, o tempo, o saldo, a produção, as advertências e a situação da cobrança. Logs do console registram entradas, saídas, transições, motivos e comunicação entre agentes. A renderização fica separada da lógica do jogo.
 
