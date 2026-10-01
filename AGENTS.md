@@ -4,7 +4,7 @@
 
 - Leia integralmente `TAX_AND_RUN_IMPLEMENTATION_SPEC.md` antes de implementar ou alterar o jogo.
 - O pedido atual do usuário delimita o trabalho. A especificação descreve o produto completo e não autoriza, por si só, iniciar todas as etapas.
-- Na preparação inicial, organize somente o repositório e a documentação; a programação será uma etapa posterior.
+- A versão jogável está implementada em MVC, com interface Swing e cobertura automatizada dos nove cenários. Consulte `docs/VALIDACAO.md` para o alcance da revisão.
 - Preserve arquivos existentes. Concentre as alterações nesta pasta, sem modificar os outros trabalhos na pasta superior.
 - Pergunte ao usuário quando houver dúvida real ou conflito entre regras; não invente regras de negócio.
 
@@ -17,6 +17,9 @@
 - Cada agente deve ter uma FSM própria e estados concretos com `enter`, `execute` e `exit`.
 - Não substitua os estados por um `switch` centralizado, enum comportamental ou conjunto de `if/else`.
 - Mantenha `StateMachine`, loop principal, domínio, eventos, entrada e renderização separados.
+- Preserve a organização MVC solicitada pelo usuário: `model/` para domínio e FSMs, `controller/` para coordenação, loop e entrada, `view/` para apresentação. `Main` compõe as camadas.
+- O Model não pode depender de Swing, AWT, Controller ou View.
+- A View recebe somente `GameSnapshot` imutável; não recebe `GameContext`, agentes mutáveis ou `GameController`. Entradas são conectadas pelo `InputHandler` no Controller.
 - A camada gráfica lê os dados e desenha; não decide estados, cobra impostos ou altera contadores.
 - Use comunicação explícita por eventos entre os agentes, com logs que permitam acompanhar seus efeitos.
 
@@ -28,8 +31,9 @@
 
 ## Regras a preservar
 
-- MORNING: os três agentes saem de casa e se deslocam até seus postos. DAY só começa quando todos chegam.
-- DAY dura 40 segundos. NIGHT dura aproximadamente 5 segundos, encerra perseguições e leva todos para casa e SLEEPING.
+- MORNING: os três agentes chegam aos postos; depois o cobrador se desloca até o Worker e resolve a cobrança. DAY só começa após o pagamento ou a fuga. Se não houver imposto, DAY começa assim que todos chegam aos postos.
+- Antes de DAY, o trabalho fica bloqueado e os timers do dia e da inatividade do chefe ficam parados. O retorno do cobrador ao banco não bloqueia DAY.
+- DAY dura 40 segundos completos após a cobrança. NIGHT encerra as perseguições e leva todos para casa; seus 5 segundos só começam quando todos estão em suas casas e em SLEEPING. O deslocamento noturno não consome esse tempo.
 - Cada trabalho válido concede 1 moeda e aumenta a produção diária em 1, sem cooldown obrigatório.
 - O trabalho emite WORK_PERFORMED e reinicia o timer de inatividade do Boss.
 - Boss registra advertência após 5 segundos sem trabalho e entra em ANGRY por aproximadamente 0,8 segundo.
@@ -40,7 +44,8 @@
 - Saldo insuficiente provoca fuga. Nunca permita saldo negativo ou acumule dívida para dias futuros.
 - Worker não trabalha em FLEEING e percorre uma rota simples de waypoints. Não existe captura; a perseguição termina em NIGHT.
 - Perseguição dupla deve ser possível. Boss começa a perseguir por sua própria inatividade, nunca por uma regra que copie a perseguição do TaxCollector.
-- O saldo persiste entre dias. No novo DAY, a produção anterior recebe a produção encerrada e os contadores e flags diários são reiniciados.
+- O saldo persiste entre dias. Quando todos chegam aos postos pela manhã, antes da cobrança, a produção anterior recebe a produção encerrada e os contadores e flags diários são reiniciados uma única vez. Não reinicie novamente ao liberar DAY, para preservar o resultado da cobrança e a fuga.
+- POSTS_REACHED inicia a avaliação do imposto; TAX_COLLECTION_RESOLVED comunica ausência de imposto, pagamento ou fuga. Só então DAY_STARTED libera trabalho e monitoramento do chefe.
 - No primeiro dia, a produção anterior é zero e não há imposto.
 
 ## Interface, logs e validação
@@ -57,3 +62,15 @@
 - Confirme com o usuário alterações de tempos, impostos, advertências, agentes, perseguições, arquitetura ou tecnologia de interface.
 - Atualize `README.md` e `AGENTS.md` quando uma regra aprovada mudar.
 - Documente somente funcionalidades e comandos realmente disponíveis; identifique claramente o que ainda está planejado.
+
+## Desenvolvimento e validação
+
+- Código em `src/taxandrun/`; testes sem bibliotecas externas em `test/taxandrun/`.
+- Use `build.ps1` para compilar com `--release 17`, `run.ps1` para executar e `test.ps1` para validar.
+- Os scripts aceitam `-JavaHome` e procuram JDK 17+ em JAVA_HOME, PATH e na pasta pessoal `.jdks`, sem alterar o sistema.
+- `test.ps1 -WindowSmoke` inclui abertura e fechamento de uma janela real para verificar o loop Swing.
+- Os testes automatizados cobrem os nove cenários da especificação. Não os descreva como testes manuais.
+- `ArchitectureTest` verifica dependências MVC e isolamento dos snapshots. Execute-o junto aos testes de simulação e interface ao alterar a arquitetura.
+- Imagens de conferência visual são geradas em `out/` e não entram no Git.
+- A renderização deve continuar funcionando sem assets externos ou fontes instaladas.
+- A distância visual entre perseguidores serve somente à legibilidade; não representa captura, dano ou uma nova regra de perseguição.

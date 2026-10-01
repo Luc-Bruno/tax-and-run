@@ -150,6 +150,8 @@ Não sacrificar a arquitetura acadêmica para obter um visual melhor.
 
 O jogo funciona em ciclos de dias.
 
+**Ajuste aprovado pelo usuário em 01/10/2026:** a preparação da manhã inclui a cobrança antes de liberar trabalho e relógios. Os 5 segundos da noite só começam depois que todos chegam em casa e dormem.
+
 Fluxo macro:
 
 ```text
@@ -157,13 +159,15 @@ MORNING
    ↓
 todos saem de casa e vão aos seus postos
    ↓
+TaxCollector resolve a cobrança (ou confirma ausência de imposto)
+   ↓
 DAY — 40 segundos
    ↓
-trabalho / impostos / advertências / perseguições
+trabalho / advertências / perseguições
    ↓
-NIGHT — aproximadamente 5 segundos
+NIGHT — todos voltam para casa
    ↓
-todos voltam para casa e dormem
+todos em casa e dormindo → contar 5 segundos
    ↓
 próximo dia
 ```
@@ -186,10 +190,18 @@ public enum GamePhase {
 - Boss sai de casa e vai para a loja;
 - TaxCollector sai de casa e vai para o banco;
 - o timer de 40 segundos ainda não começou;
+- trabalho e timer de inatividade do Boss ficam bloqueados;
 - quando os três atingirem seus postos:
-  - iniciar `DAY`;
-  - disparar evento de início de dia;
-  - TaxCollector avalia o imposto referente ao dia anterior.
+  - preparar os dados diários uma única vez;
+  - emitir `POSTS_REACHED`;
+  - TaxCollector avalia o imposto referente ao dia anterior;
+  - se houver cobrança, caminhar até o Worker e resolver pagamento ou fuga;
+  - ausência de imposto, pagamento ou fuga emitem `TAX_COLLECTION_RESOLVED`;
+- somente após a resolução:
+  - iniciar `DAY` e emitir `DAY_STARTED`;
+  - liberar os 40 segundos do dia e o timer do Boss;
+  - liberar trabalho apenas se o Worker não estiver fugindo;
+- não esperar o retorno do cobrador ao banco para liberar o dia.
 
 ### DAY
 
@@ -204,13 +216,13 @@ Durante DAY:
 - botão `WORK!` fica disponível quando Worker pode trabalhar;
 - Worker gera moedas;
 - Boss monitora o trabalhador;
-- TaxCollector executa cobrança;
+- TaxCollector retorna ao banco após pagamento ou persegue após fuga;
 - perseguições podem ocorrer;
 - HUD mostra contagem regressiva.
 
 ### NIGHT
 
-Duração alvo:
+Duração do sono, após todos chegarem em casa:
 
 ```text
 5 segundos
@@ -222,13 +234,16 @@ Ao entrar em NIGHT:
 - perseguições param;
 - todos entram em estados de retorno para casa;
 - agentes caminham até suas casas;
+- durante esse deslocamento, o contador permanece em 5 segundos;
 - ao chegar:
   - entram em `SLEEPING`;
   - podem exibir `Z`, `ZZ`, `ZZZ`;
+- apenas quando os três estiverem em suas próprias casas e em `SLEEPING`, iniciar a contagem dos 5 segundos;
 - ao final dos 5 segundos:
-  - garantir que todos estejam em casa;
   - incrementar o número do dia;
   - iniciar MORNING.
+
+O tempo de deslocamento até as casas não faz parte dos 5 segundos de sono.
 
 ---
 
@@ -370,7 +385,7 @@ Persiste entre dias.
 
 Quantidade produzida no dia atual.
 
-Zera no início de cada novo DAY.
+Zera na preparação da manhã, quando todos chegam aos postos, antes da cobrança. Não zerar novamente ao iniciar DAY.
 
 ### previousDayProduction
 
@@ -489,6 +504,8 @@ Se essa regra for alterada futuramente, deve ser decisão explícita do usuário
 # 11. Regras do chefe
 
 Boss monitora o tempo sem trabalho do Worker.
+
+Seu timer só começa após a cobrança da manhã ser resolvida e DAY iniciar. A caminhada até os postos e a ida do cobrador ao Worker não contam como inatividade.
 
 ## 11.1 Timer
 
@@ -644,6 +661,8 @@ ou sistema equivalente simples usando apenas Java padrão.
 ## 13.1 Eventos sugeridos
 
 ```text
+POSTS_REACHED
+TAX_COLLECTION_RESOLVED
 DAY_STARTED
 NIGHT_STARTED
 WORK_PERFORMED
@@ -831,6 +850,7 @@ Se fase mudar para MORNING:
 
 - movimentar até a loja;
 - permanecer pronto no local;
+- aguardar a cobrança matinal, sem permitir trabalho;
 - quando `GamePhase == DAY`:
 
 ```text
@@ -840,6 +860,8 @@ Se fase mudar para MORNING:
 ### exit
 
 - limpar alvo de deslocamento.
+
+Se a cobrança provocar fuga durante a preparação da manhã, ir diretamente para FLEEING. O início de DAY não deve substituir essa fuga por WORKING.
 
 ---
 
@@ -1143,7 +1165,7 @@ MORNING:
 
 Mover até o banco.
 
-Quando DAY iniciar:
+Quando todos chegarem aos postos e `POSTS_REACHED` for emitido:
 
 ```text
 → WAITING
@@ -1153,13 +1175,15 @@ Quando DAY iniciar:
 
 ## 17.3 WAITING
 
-Ao receber `DAY_STARTED`:
+Ao receber `POSTS_REACHED`:
 
 - calcular regra do imposto com `previousDayProduction`;
 - se imposto = 0:
-  - continuar `WAITING`;
+  - continuar `WAITING` e emitir `TAX_COLLECTION_RESOLVED`, desde que não seja o caso de produção acima de 40;
 - se existe cobrança:
   - `→ GOING_TO_COLLECT`.
+
+Produção acima de 40 também exige deslocamento e tentativa de cobrança, mesmo sem um valor normal a pagar.
 
 ---
 
@@ -1178,6 +1202,8 @@ Quando entrar em distância de cobrança:
 ## 17.5 COLLECTING
 
 Avaliar:
+
+Ao concluir qualquer um dos casos abaixo, emitir `TAX_COLLECTION_RESOLVED`. Esse evento permite iniciar DAY, sem aguardar retorno ao banco e sem desfazer uma fuga.
 
 ### Caso 1 — previousDayProduction > 40
 
@@ -1287,7 +1313,7 @@ Ao chegar:
 
 # 18. Reset diário
 
-Ao iniciar um novo dia:
+Na preparação de cada manhã, após todos chegarem aos postos e antes da avaliação de imposto:
 
 ```text
 previousDayProduction = dailyProduction do dia anterior
@@ -1298,6 +1324,8 @@ taxAttemptedToday = false
 bossChasing = false
 taxCollectorChasing = false
 ```
+
+Executar esse reset uma única vez. Ao iniciar DAY depois da cobrança, não repetir o reset: preservar saldo após pagamento e os estados e motivos de fuga.
 
 O saldo:
 
@@ -1414,11 +1442,13 @@ barra visual diminuindo.
 Durante NIGHT:
 
 - mostrar lua;
-- opcionalmente nova barra de 5s.
+- barra de 5s permanece cheia durante o retorno para casa;
+- a barra só diminui após todos chegarem em casa e dormirem.
 
 Durante MORNING:
 
-- mostrar “Day N” / nascer do sol / “Going to work”.
+- mostrar “Day N” / nascer do sol / “Going to work”;
+- durante a cobrança, mostrar “Tax collection”, com os 40 segundos intactos e WORK! bloqueado.
 
 ---
 
@@ -1523,79 +1553,42 @@ Priorizar:
 
 # 24. Estrutura de código recomendada
 
+**Organização MVC solicitada pelo usuário e aplicada em 01/10/2026:** o padrão State permanece no Model, a coordenação e a entrada ficam no Controller, e a apresentação fica na View.
+
 ```text
-TaxAndRun/
-│
+Tax & Run/
 ├── README.md
 ├── AGENTS.md
 ├── .gitignore
-├── assets/
-│   └── optional png assets
-│
-└── src/
-    └── taxandrun/
-        ├── Main.java
-        │
-        ├── game/
-        │   ├── GameLoop.java
-        │   ├── GameController.java
-        │   ├── GameContext.java
-        │   ├── GameConfig.java
-        │   └── GamePhase.java
-        │
-        ├── state/
-        │   ├── State.java
-        │   └── StateMachine.java
-        │
-        ├── event/
-        │   ├── GameEvent.java
-        │   ├── GameEventType.java
-        │   └── GameEventBus.java
-        │
-        ├── agent/
-        │   ├── Agent.java
-        │   ├── Worker.java
-        │   ├── Boss.java
-        │   ├── TaxCollector.java
-        │   │
-        │   ├── worker/
-        │   │   ├── WorkerSleepingState.java
-        │   │   ├── WorkerGoingToWorkState.java
-        │   │   ├── WorkerWorkingState.java
-        │   │   ├── WorkerIdleState.java
-        │   │   ├── WorkerFleeingState.java
-        │   │   └── WorkerGoingHomeState.java
-        │   │
-        │   ├── boss/
-        │   │   ├── BossSleepingState.java
-        │   │   ├── BossGoingToWorkState.java
-        │   │   ├── BossWatchingState.java
-        │   │   ├── BossAngryState.java
-        │   │   ├── BossChasingState.java
-        │   │   └── BossGoingHomeState.java
-        │   │
-        │   └── tax/
-        │       ├── TaxSleepingState.java
-        │       ├── TaxGoingToBankState.java
-        │       ├── TaxWaitingState.java
-        │       ├── TaxGoingToCollectState.java
-        │       ├── TaxCollectingState.java
-        │       ├── TaxReturningToBankState.java
-        │       ├── TaxChasingState.java
-        │       └── TaxGoingHomeState.java
-        │
-        ├── world/
-        │   ├── Vector2.java
-        │   └── WorldLayout.java
-        │
-        └── ui/
-            ├── GameWindow.java
-            ├── GamePanel.java
-            ├── GameRenderer.java
-            ├── InputHandler.java
-            ├── AssetManager.java
-            └── PixelArtFactory.java
+├── docs/VALIDACAO.md
+├── build.ps1, run.ps1, run.bat, test.ps1
+├── scripts/java-tools.ps1
+├── test/taxandrun/
+└── src/taxandrun/
+    ├── Main.java
+    ├── model/
+    │   ├── game/       GameContext, GameConfig, GamePhase, GameLog, GameSnapshot
+    │   ├── state/      State, StateMachine, AgentState
+    │   ├── event/      GameEvent, GameEventType, GameEventBus
+    │   ├── world/      Vector2, WorldLayout
+    │   └── agent/
+    │       ├── Agent.java, Worker.java, Boss.java, TaxCollector.java
+    │       ├── worker/ seis estados concretos e classe base WorkerState
+    │       ├── boss/   seis estados concretos e classe base BossState
+    │       └── tax/    oito estados concretos e classe base TaxState
+    ├── controller/
+    │   ├── GameController.java
+    │   ├── GameLoop.java
+    │   └── InputHandler.java
+    └── view/
+        ├── GameWindow.java
+        ├── GamePanel.java
+        ├── GameRenderer.java
+        ├── PixelFont.java
+        └── PixelArtFactory.java
 ```
+
+A View recebe somente snapshots imutáveis do jogo. O Model não depende de Swing, AWT, Controller ou View. `Main` conecta as camadas; o `InputHandler` encaminha comandos ao `GameController`. O teste `ArchitectureTest` verifica esses limites.
 
 A estrutura exata pode ser adaptada se necessário, mas:
 
@@ -1942,6 +1935,8 @@ Depois:
 todos → SLEEPING
 ```
 
+O contador noturno fica em 5 segundos até a última chegada. Somente então são contados 5 segundos completos de sono.
+
 Novo dia inicia corretamente.
 
 ---
@@ -2215,64 +2210,67 @@ O objetivo é demonstrar máquinas de estado.
 
 O projeto só pode ser considerado pronto quando todos forem verdadeiros.
 
+Conferência funcional e arquitetural em 01/10/2026: critérios abaixo atendidos por inspeção, testes automatizados e conferência visual. Consulte `docs/VALIDACAO.md` para as evidências e para distinguir essa revisão do roteiro manual integral da seção 29.
+
 ## Arquitetura
 
-- [ ] Java padrão.
-- [ ] Sem bibliotecas externas.
-- [ ] State interface com enter/execute/exit.
-- [ ] StateMachine real.
-- [ ] Cada agente possui estados concretos.
-- [ ] GameLoop separado.
-- [ ] Renderização separada da lógica.
+- [x] Java padrão.
+- [x] Sem bibliotecas externas.
+- [x] State interface com enter/execute/exit.
+- [x] StateMachine real.
+- [x] Cada agente possui estados concretos.
+- [x] GameLoop separado.
+- [x] Renderização separada da lógica.
 
 ## Agentes
 
-- [ ] Worker funciona.
-- [ ] Boss funciona.
-- [ ] TaxCollector funciona.
-- [ ] Cada um possui FSM própria.
-- [ ] Comunicação entre agentes funciona.
+- [x] Worker funciona.
+- [x] Boss funciona.
+- [x] TaxCollector funciona.
+- [x] Cada um possui FSM própria.
+- [x] Comunicação entre agentes funciona.
 
 ## Gameplay
 
-- [ ] DAY dura 40s.
-- [ ] NIGHT dura ~5s.
-- [ ] Worker ganha 1 moeda por trabalho.
-- [ ] Boss reage após 5s.
-- [ ] Segunda advertência gera perseguição.
-- [ ] Imposto 1–20 = 5.
-- [ ] Imposto 21–40 = 15.
-- [ ] Acima de 40 gera fuga.
-- [ ] Saldo insuficiente gera fuga.
-- [ ] TaxCollector caminha fisicamente até Worker.
-- [ ] Perseguição dupla é possível.
-- [ ] Todos dormem à noite.
+- [x] DAY dura 40s a partir da resolução da cobrança matinal.
+- [x] Trabalho e timer do chefe aguardam a resolução da cobrança.
+- [x] NIGHT conta 5s de sono somente após todos chegarem em casa; retorno não consome esse tempo.
+- [x] Worker ganha 1 moeda por trabalho.
+- [x] Boss reage após 5s.
+- [x] Segunda advertência gera perseguição.
+- [x] Imposto 1–20 = 5.
+- [x] Imposto 21–40 = 15.
+- [x] Acima de 40 gera fuga.
+- [x] Saldo insuficiente gera fuga.
+- [x] TaxCollector caminha fisicamente até Worker.
+- [x] Perseguição dupla é possível.
+- [x] Todos dormem à noite.
 
 ## Interface
 
-- [ ] Janela gráfica funcional.
-- [ ] Pixel art ou visual pixelizado.
-- [ ] HUD mostra estados.
-- [ ] Timer visível.
-- [ ] Botão WORK!.
-- [ ] Feedback visual.
-- [ ] Interface continua responsiva.
+- [x] Janela gráfica funcional.
+- [x] Pixel art ou visual pixelizado.
+- [x] HUD mostra estados.
+- [x] Timer visível.
+- [x] Botão WORK!.
+- [x] Feedback visual.
+- [x] Interface continua responsiva.
 
 ## Logs
 
-- [ ] Transições aparecem no console.
-- [ ] Motivos aparecem no console.
-- [ ] Impostos aparecem no console.
-- [ ] Eventos entre agentes aparecem no console.
+- [x] Transições aparecem no console.
+- [x] Motivos aparecem no console.
+- [x] Impostos aparecem no console.
+- [x] Eventos entre agentes aparecem no console.
 
 ## Repositório
 
-- [ ] README.md.
-- [ ] AGENTS.md.
-- [ ] .gitignore.
-- [ ] src/ organizado.
-- [ ] Nenhum PDF obrigatório.
-- [ ] Nenhuma dependência externa.
+- [x] README.md.
+- [x] AGENTS.md.
+- [x] .gitignore.
+- [x] src/ organizado.
+- [x] Nenhum PDF obrigatório.
+- [x] Nenhuma dependência externa.
 
 ---
 
