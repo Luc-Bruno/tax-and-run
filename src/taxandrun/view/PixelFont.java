@@ -1,0 +1,83 @@
+package taxandrun.view;
+
+import java.awt.Graphics2D;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+/** Fonte 5x7 própria, sem arquivos ou fontes instaladas no computador. */
+public final class PixelFont {
+    private static final Map<Character, String> GLYPHS = new HashMap<>();
+    static {
+        GLYPHS.put('0', "01110100011001110101110011000101110");
+        GLYPHS.put('1', "00100011000010000100001000010001110");
+        GLYPHS.put('2', "01110100010000100010001000100011111");
+        GLYPHS.put('3', "11110000010000101110000010000111110");
+        GLYPHS.put('4', "00010001100101010010111110001000010");
+        GLYPHS.put('5', "11111100001000011110000010000111110");
+        GLYPHS.put('6', "01110100001000011110100011000101110");
+        GLYPHS.put('7', "11111000010001000100010000100001000");
+        GLYPHS.put('8', "01110100011000101110100011000101110");
+        GLYPHS.put('9', "01110100011000101111000010000101110");
+        GLYPHS.put('A', "01110100011000111111100011000110001");
+        GLYPHS.put('B', "11110100011000111110100011000111110");
+        GLYPHS.put('C', "01111100001000010000100001000001111");
+        GLYPHS.put('D', "11110100011000110001100011000111110");
+        GLYPHS.put('E', "11111100001000011110100001000011111");
+        GLYPHS.put('F', "11111100001000011110100001000010000");
+        GLYPHS.put('G', "01111100001000010111100011000101111");
+        GLYPHS.put('H', "10001100011000111111100011000110001");
+        GLYPHS.put('I', "11111001000010000100001000010011111");
+        GLYPHS.put('J', "00111000100001000010100101001001100");
+        GLYPHS.put('K', "10001100101010011000101001001010001");
+        GLYPHS.put('L', "10000100001000010000100001000011111");
+        GLYPHS.put('M', "10001110111010110101100011000110001");
+        GLYPHS.put('N', "10001110011010110011100011000110001");
+        GLYPHS.put('O', "01110100011000110001100011000101110");
+        GLYPHS.put('P', "11110100011000111110100001000010000");
+        GLYPHS.put('Q', "01110100011000110001101011001001101");
+        GLYPHS.put('R', "11110100011000111110101001001010001");
+        GLYPHS.put('S', "01111100001000001110000010000111110");
+        GLYPHS.put('T', "11111001000010000100001000010000100");
+        GLYPHS.put('U', "10001100011000110001100011000101110");
+        GLYPHS.put('V', "10001100011000110001100010101000100");
+        GLYPHS.put('W', "10001100011000110101101011010101010");
+        GLYPHS.put('X', "10001100010101000100010101000110001");
+        GLYPHS.put('Y', "10001100010101000100001000010000100");
+        GLYPHS.put('Z', "11111000010001000100010001000011111");
+        GLYPHS.put('&', "01100100101010001000101011001001101");
+        GLYPHS.put('$', "00100011111010001110001011111000100");
+        GLYPHS.put('!', "00100001000010000100001000000000100");
+        GLYPHS.put('?', "01110100010000100010001000000000100");
+        GLYPHS.put(':', "00000001000010000000001000010000000");
+        GLYPHS.put('.', "00000000000000000000000000010000100");
+        GLYPHS.put('+', "00000001000010011111001000010000000");
+        GLYPHS.put('-', "00000000000000011111000000000000000");
+        GLYPHS.put('_', "00000000000000000000000000000011111");
+        GLYPHS.put('/', "00001000010001000100010001000010000");
+        GLYPHS.put('(', "00010001000100001000010000010000010");
+        GLYPHS.put(')', "01000001000001000010000100010001000");
+        GLYPHS.put('>', "10000010000010000010001000100010000");
+        GLYPHS.put('[', "01110010000100001000010000100001110");
+        GLYPHS.put(']', "01110000100001000010000100001001110");
+    }
+    private PixelFont() {}
+
+    public static int width(String text) { return Math.max(0, text.length() * 6 - 1); }
+
+    public static void draw(Graphics2D g, String text, int x, int baseline) {
+        String upper = text.toUpperCase(Locale.ROOT);
+        for (int index = 0; index < upper.length(); index++) {
+            char character = upper.charAt(index);
+            if (character == ' ') continue;
+            String glyph = GLYPHS.getOrDefault(character, GLYPHS.get('?'));
+            for (int row = 0; row < 7; row++) {
+                for (int col = 0; col < 5; col++) {
+                    if (glyph.charAt(row * 5 + col) == '1') {
+                        g.fillRect(x + index * 6 + col, baseline - 6 + row, 1, 1);
+                    }
+                }
+            }
+        }
+    }
+}
