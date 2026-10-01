@@ -12,7 +12,7 @@
 
 - Java 17 ou superior, somente Java padrão, Swing, AWT e Java2D.
 - Não adicione bibliotecas externas, engines ou dependências externas Maven/Gradle.
-- Não migre para JavaFX sem autorização explícita.
+- JavaFX foi descartado pelo usuário. Mantenha a interface em Swing, AWT e Java2D, sem prever migração para JavaFX.
 - O padrão **State** é requisito acadêmico e não deve ser simplificado ou removido.
 - Cada agente deve ter uma FSM própria e estados concretos com `enter`, `execute` e `exit`.
 - Não substitua os estados por um `switch` centralizado, enum comportamental ou conjunto de `if/else`.
@@ -62,6 +62,7 @@
 - Confirme com o usuário alterações de tempos, impostos, advertências, agentes, perseguições, arquitetura ou tecnologia de interface.
 - Atualize `README.md` e `AGENTS.md` quando uma regra aprovada mudar.
 - Documente somente funcionalidades e comandos realmente disponíveis; identifique claramente o que ainda está planejado.
+- Mantenha o README focado no projeto, arquitetura, execução e testes. Não inclua roteiros de arguição, defesa de código ou instruções sobre o que apresentar à professora.
 
 ## Desenvolvimento e validação
 

@@ -93,7 +93,7 @@ Esse comportamento emergente é parte central do conceito de **ilusão de inteli
 
 ---
 
-# 3. Tecnologia obrigatória da primeira versão
+# 3. Tecnologia obrigatória do projeto
 
 Utilizar:
 
@@ -106,7 +106,7 @@ Utilizar:
 - `javax.swing.Timer` ou loop próprio em Java padrão;
 - `javax.sound.sampled` apenas se áudio for implementado.
 
-Não utilizar nesta versão:
+Não utilizar no projeto:
 
 - JavaFX;
 - LibGDX;
@@ -116,17 +116,11 @@ Não utilizar nesta versão:
 - engines externas;
 - dependências Maven/Gradle externas.
 
-## 3.1 Possível alteração futura
+## 3.1 Decisão definitiva sobre a interface
 
-Caso a professora autorize JavaFX futuramente:
+Por decisão do usuário em 01/10/2026, a migração para JavaFX foi descartada. O projeto permanecerá em Java padrão, Swing, AWT e Java2D, sem bibliotecas externas.
 
-- manter toda a lógica do domínio;
-- manter os agentes;
-- manter as FSMs;
-- manter as regras;
-- substituir somente a camada de interface/renderização quando possível.
-
-A arquitetura deve ser preparada para essa separação.
+A separação MVC continua obrigatória para organizar domínio, controle e apresentação, independentemente dessa decisão de tecnologia.
 
 ---
 
@@ -2032,6 +2026,8 @@ Não afirmar que “faltou PDF”.
 
 Apenas documentar o projeto normalmente.
 
+Por solicitação do usuário, não incluir no README roteiros de arguição, defesa de código ou instruções sobre o que explicar ou mostrar à professora. O README deve documentar o projeto, sua arquitetura, execução e testes.
+
 ---
 
 # 31. AGENTS.md obrigatório
@@ -2058,7 +2054,7 @@ Ele deve registrar de forma objetiva:
 - HUD com estados;
 - logs;
 - proibição de remover as FSMs;
-- proibição de migrar para JavaFX sem autorização explícita;
+- decisão de manter Swing, AWT e Java2D, sem migração para JavaFX;
 - obrigação de atualizar `README.md` e `AGENTS.md` se alguma regra for alterada.
 
 ## 31.1 Texto conceitual que deve constar no AGENTS.md

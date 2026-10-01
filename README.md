@@ -42,7 +42,7 @@ Cada agente tem sua própria máquina de estados, implementada com o padrão **S
 
 ## Tecnologia
 
-**Java 17 ou superior**, usando somente Java padrão, Swing, AWT e Java2D. Nenhuma biblioteca externa.
+**Java 17 ou superior**, usando somente Java padrão, Swing, AWT e Java2D. Essa é a tecnologia definida para o projeto, sem bibliotecas externas. A migração para JavaFX foi descartada.
 
 A interface mostra os estados atuais dos agentes, o tempo, o saldo, a produção, as advertências e a situação da cobrança. Logs do console registram entradas, saídas, transições, motivos e comunicação entre agentes. A renderização fica separada da lógica do jogo.
 
@@ -158,12 +158,3 @@ Os testes compilam com `--release 17 -Xlint:all -Werror`, sem JUnit ou outras bi
 Os testes avançam o relógio da simulação, sem esperar os 40 segundos reais de cada dia. As imagens de manhã, cobrança, dia, advertência, perseguição, retorno para casa, noite e pausa são salvas em `out/`, que fica fora do Git.
 
 A validação automatizada não substitui a revisão manual final dos nove cenários descritos na especificação.
-
-## Roteiro para a arguição
-
-1. Mostrar `model/state/State.java` e `StateMachine.java`: cada transição chama `exit` e `enter`, e a atualização chama `execute`.
-2. Mostrar `model/agent/Boss.java`, `BossWatchingState` e `BossAngryState`: 5 segundos geram uma advertência, e a segunda leva à perseguição.
-3. Mostrar `model/event/GameEventBus.java`: `WORK_PERFORMED` reinicia o timer do chefe; `BOSS_CHASE_STARTED` faz o Worker fugir.
-4. Mostrar `controller/GameLoop.java` e `GameController.java`: o loop avança a simulação, e o Controller coordena manhã, dia e noite.
-5. Mostrar `model/game/GameSnapshot.java` e `view/GameRenderer.java`: a interface apresenta os dados sem decidir o comportamento dos agentes.
-6. Executar o jogo e relacionar a mesma transição ao painel de estados e aos logs. Na perseguição dupla, o chefe reage ao seu próprio timer de inatividade.
